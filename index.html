@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GameHub</title>
+<style>
+:root{--bg:#0b1020;--panel:#151e34;--panel2:#202b46;--accent:#7865ef;--muted:#9aa6c1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:15px Arial,sans-serif}
+header{padding:16px 5%;background:#141c32;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-size:26px;font-weight:800;color:#a99cff}nav{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:white;font-weight:bold;cursor:pointer}button.secondary,nav button{background:#26314c}button:disabled{opacity:.5;cursor:not-allowed}
+main{max-width:1100px;margin:28px auto;padding:0 16px}.page{display:none}.page.active{display:block}
+h1{font-size:32px}.muted{color:var(--muted)}.panel,.tile{background:var(--panel);padding:20px;border-radius:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+.tile{background:var(--panel2)}input,textarea{width:100%;padding:12px;margin:7px 0;background:#0d1528;color:white;border:1px solid #394562;border-radius:8px}
+textarea{min-height:75px;resize:vertical}.hidden{display:none!important}.status{padding:10px;border-radius:9px;background:#202b46;margin:10px 0}
+.chat-shell{height:min(650px,72vh);min-height:430px;display:grid;grid-template-columns:260px 1fr;background:#111a2e;border:1px solid #293653;border-radius:16px;overflow:hidden}
+.chat-side{background:#17223a;border-right:1px solid #293653;overflow:auto}.chat-side h2{padding:0 15px}
+.contact{display:block;width:100%;text-align:left;color:white;background:transparent;border-radius:0;border-top:1px solid #26314c}
+.contact.active{background:#263653}.messages{padding:16px;overflow:auto;display:flex;flex-direction:column;gap:9px;min-height:0}
+.chat-main{display:flex;flex-direction:column;min-width:0}.chat-top{padding:14px 18px;background:#17223a;border-bottom:1px solid #293653}
+.bubble{max-width:78%;padding:10px 13px;border-radius:14px;background:#293653;align-self:flex-start;overflow-wrap:anywhere}.bubble.mine{background:#6655d9;align-self:flex-end}
+.bubble small{display:block;text-align:right;font-size:10px;color:#ddd5ff;margin-top:5px}
+.compose{display:flex;gap:8px;padding:12px;background:#17223a}.compose input{margin:0}
+footer{text-align:center;color:#8791a9;padding:28px}
+@media(max-width:650px){.chat-shell{grid-template-columns:105px 1fr}.contact{font-size:11px;padding:12px 5px;text-align:center}.chat-side h2{font-size:14px;padding:0 7px}.bubble{max-width:92%}.compose{flex-wrap:wrap}.compose input{width:100%}}
+</style>
+</head>
+<body>
+<header><div class="logo">⚡ GameHub</div><nav>
+<button onclick="showPage('home')">Pradžia</button><button onclick="showPage('games')">🎮 Žaidimai</button>
+<button onclick="showPage('ads')">📢 Skelbimai</button><button onclick="showPage('chat')">💬 Pokalbiai</button>
+</nav><div id="accountNav"><button onclick="showPage('account')">Prisijungti</button></div></header>
+<main>
+<div id="notice" class="status hidden"></div>
+<section id="home" class="page active"><h1>Sveikas atvykęs į GameHub!</h1><p class="muted">Žaisk, skelbk ir bendrauk vienoje vietoje.</p>
+<div class="grid">
+<div class="tile"><h2>🎮 Žaidimai</h2><p>Dalinkis HTML žaidimais.</p><button onclick="showPage('games')">Atidaryti</button></div>
+<div class="tile"><h2>📢 Skelbimai</h2><p>Skelbk ir atrask pasiūlymus.</p><button onclick="showPage('ads')">Atidaryti</button></div>
+<div class="tile"><h2>💬 Pokalbiai</h2><p>Rašyk kitiems nariams realiuoju laiku.</p><button onclick="showPage('chat')">Atidaryti</button></div>
+</div></section>
+
+<section id="account" class="page"><h1>👤 Paskyra</h1><div class="panel" id="authPanel">
+<h2>Registracija arba prisijungimas</h2><input id="email" type="email" placeholder="El. paštas"><input id="password" type="password" placeholder="Slaptažodis (bent 6 simboliai)">
+<input id="username" placeholder="Vartotojo vardas (registracijai)">
+<div class="grid"><button onclick="signUp()">Registruotis</button><button class="secondary" onclick="signIn()">Prisijungti</button></div>
+<p class="muted">Registracijai gali reikėti patvirtinti el. paštą.</p></div>
+<div class="panel hidden" id="profilePanel"><h2 id="profileName"></h2><p id="profileEmail" class="muted"></p><button onclick="signOut()">Atsijungti</button></div>
+</section>
+
+<section id="games" class="page"><h1>🎮 Žaidimų biblioteka</h1><div class="panel"><h2>Įkelk HTML žaidimą</h2>
+<p class="muted">Prisijunk, pasirink .html failą ir paskelbk jį bendroje bibliotekoje.</p>
+<input id="gameTitle" placeholder="Žaidimo pavadinimas"><input id="gameFile" type="file" accept=".html,text/html">
+<button onclick="uploadGame()">Įkelti žaidimą</button></div><div id="gamesList" class="grid"></div></section>
+
+<section id="ads" class="page"><h1>📢 Skelbimai</h1><div class="panel"><h2>Naujas skelbimas</h2>
+<input id="adTitle" placeholder="Pavadinimas"><textarea id="adDesc" placeholder="Aprašymas"></textarea><button onclick="addAd()">Paskelbti</button>
+</div><div id="adList" class="grid"></div></section>
+
+<section id="chat" class="page"><h1>💬 Pokalbiai</h1><p class="muted">Ieškok nario pagal jo vartotojo vardą ir pradėk privatų pokalbį.</p>
+<div class="panel"><input id="userSearch" placeholder="Vartotojo vardas"><button onclick="findUser()">Rasti narį</button><div id="userResult"></div></div>
+<div class="chat-shell"><aside class="chat-side"><h2>Kontaktai</h2><div id="contacts" class="muted" style="padding:12px">Prisijunk, kad matytum pokalbius.</div></aside>
+<div class="chat-main"><div class="chat-top"><strong id="chatTitle">Pasirink pokalbį</strong></div><div id="messages" class="messages"></div>
+<div class="compose"><input id="chatInput" placeholder="Parašyk žinutę..." onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">Siųsti</button></div></div></div>
+</section>
+</main><footer>GameHub © 2026</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script>
+<script>
+/* Įrašyk savo Supabase projekto URL ir anon key faile config.js */
+let sb=null, user=null, activeChat=null, messageChannel=null;
+const $=id=>document.getElementById(id);
+function note(t){$('notice').textContent=t;$('notice').classList.remove('hidden')}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');if(id==='games')loadGames();if(id==='ads')loadAds();if(id==='chat')loadContacts()}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function init(){
+ if(!window.supabase){note('Nepavyko įkelti Supabase bibliotekos. Patikrink interneto ryšį.');return}
+ if(!window.GAMEHUB_CONFIG){note('Dar nesukonfigūruota: įrašyk Supabase URL ir anon key faile config.js.');return}
+ sb=window.supabase.createClient(GAMEHUB_CONFIG.url,GAMEHUB_CONFIG.anonKey);
+ const {data}=await sb.auth.getSession();user=data.session?.user||null;updateAccount();
+ sb.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;updateAccount();if(user)loadContacts()});
+ loadGames();loadAds();
+}
+function updateAccount(){
+ $('accountNav').innerHTML=user?`<button onclick="showPage('account')">👤 ${escapeHtml(user.user_metadata.username||user.email)}</button>`:'<button onclick="showPage(&quot;account&quot;)">Prisijungti</button>';
+ $('authPanel').classList.toggle('hidden',!!user);$('profilePanel').classList.toggle('hidden',!user);
+ if(user){$('profileName').textContent='Sveikas, '+(user.user_metadata.username||'GameHub nary')+'!';$('profileEmail').textContent=user.email}
+}
+async function signUp(){if(!sb)return note('Pirmiausia sukonfigūruok Supabase.');const email=$('email').value.trim(),password=$('password').value,username=$('username').value.trim();
+ if(!email||password.length<6||!username)return note('Įrašyk el. paštą, bent 6 simbolių slaptažodį ir vartotojo vardą.');
+ const {error}=await sb.auth.signUp({email,password,options:{data:{username}}});note(error?error.message:'Registracija pradėta. Jei įjungtas el. pašto patvirtinimas, patikrink paštą.')}
+async function signIn(){if(!sb)return note('Pirmiausia sukonfigūruok Supabase.');const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});note(error?error.message:'Prisijungei!')}
+async function signOut(){await sb.auth.signOut();user=null;activeChat=null;updateAccount();note('Atsijungei.')}
+async function loadGames(){if(!sb)return;const {data,error}=await sb.from('games').select('id,title,owner_name,created_at').order('created_at',{ascending:false});if(error)return;
+ $('gamesList').innerHTML='';for(const g of data){const card=document.createElement('div');card.className='tile';card.innerHTML=`<h3>${escapeHtml(g.title)}</h3><p class="muted">Įkėlė ${escapeHtml(g.owner_name||'narys')}</p><button>Atidaryti</button>`;card.querySelector('button').onclick=()=>openGame(g.id);$('gamesList').append(card)}}
+async function uploadGame(){if(!user)return note('Norėdamas įkelti žaidimą, prisijunk.');const f=$('gameFile').files[0],title=$('gameTitle').value.trim();if(!f||!title)return note('Įrašyk pavadinimą ir pasirink HTML failą.');if(!f.name.toLowerCase().endsWith('.html'))return note('Galima įkelti tik .html failą.');
+ const path=user.id+'/'+crypto.randomUUID()+'.html';let {error}=await sb.storage.from('games').upload(path,f,{contentType:'text/html'});if(error)return note(error.message);
+ const {error:e}=await sb.from('games').insert({title,storage_path:path,owner_id:user.id,owner_name:user.user_metadata.username||user.email});if(e)return note(e.message);$('gameTitle').value='';$('gameFile').value='';note('Žaidimas įkeltas!');loadGames()}
+async function openGame(id){const {data,error}=await sb.from('games').select('storage_path').eq('id',id).single();if(error)return note(error.message);const {data:u}=sb.storage.from('games').getPublicUrl(data.storage_path);window.open(u.publicUrl,'_blank','noopener')}
+async function loadAds(){if(!sb)return;const {data,error}=await sb.from('ads').select('id,title,description,owner_name,created_at').order('created_at',{ascending:false});if(error)return;$('adList').innerHTML='';for(const a of data){const d=document.createElement('div');d.className='tile';const h=document.createElement('h3'),p=document.createElement('p'),small=document.createElement('small');h.textContent=a.title;p.textContent=a.description;small.className='muted';small.textContent='Paskelbė '+(a.owner_name||'narys');d.append(h,p,small);$('adList').append(d)}}
+async function addAd(){if(!user)return note('Norėdamas skelbti, prisijunk.');const title=$('adTitle').value.trim(),description=$('adDesc').value.trim();if(!title||!description)return note('Užpildyk pavadinimą ir aprašymą.');const {error}=await sb.from('ads').insert({title,description,owner_id:user.id,owner_name:user.user_metadata.username||user.email});if(error)return note(error.message);$('adTitle').value='';$('adDesc').value='';note('Skelbimas paskelbtas.');loadAds()}
+async function findUser(){if(!user)return note('Pirmiausia prisijunk.');const q=$('userSearch').value.trim();if(!q)return;const {data,error}=await sb.from('profiles').select('id,username').ilike('username',q).limit(5);if(error)return note(error.message);$('userResult').innerHTML='';if(!data.length){$('userResult').textContent='Narys nerastas.';return}
+ data.filter(x=>x.id!==user.id).forEach(x=>{const b=document.createElement('button');b.className='secondary';b.textContent='Pradėti pokalbį su '+x.username;b.onclick=()=>startChat(x.id,x.username);$('userResult').append(b)})}
+async function startChat(otherId,name){const {data,error}=await sb.rpc('get_or_create_dm',{other_user:otherId});if(error)return note(error.message);activeChat=data;$('chatTitle').textContent=name;await loadMessages();subscribeMessages();loadContacts()}
+async function loadContacts(){if(!sb||!user)return;const {data,error}=await sb.from('dm_members').select('conversation_id,profiles(id,username)').eq('user_id',user.id);if(error)return;
+ $('contacts').innerHTML='';for(const row of data){const b=document.createElement('button');b.className='contact';const name=row.profiles?.username||'GameHub narys';b.textContent='💬 '+name;b.onclick=async()=>{activeChat=row.conversation_id;$('chatTitle').textContent=name;await loadMessages();subscribeMessages()};$('contacts').append(b)}}
+async function loadMessages(){if(!activeChat)return;$('messages').innerHTML='';const {data,error}=await sb.from('messages').select('id,sender_id,body,created_at').eq('conversation_id',activeChat).order('created_at');if(error)return note(error.message);data.forEach(renderMessage)}
+function renderMessage(m){const d=document.createElement('div');d.className='bubble'+(m.sender_id===user?.id?' mine':'');d.textContent=m.body;const s=document.createElement('small');s.textContent=new Date(m.created_at).toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'});d.append(s);$('messages').append(d);$('messages').scrollTop=$('messages').scrollHeight}
+function subscribeMessages(){if(messageChannel)sb.removeChannel(messageChannel);messageChannel=sb.channel('dm-'+activeChat).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'conversation_id=eq.'+activeChat},payload=>renderMessage(payload.new)).subscribe()}
+async function sendMessage(){if(!user||!activeChat)return note('Pasirink pokalbį.');const body=$('chatInput').value.trim();if(!body)return;const {error}=await sb.from('messages').insert({conversation_id:activeChat,sender_id:user.id,body});if(error)return note(error.message);$('chatInput').value=''}
+init();
+</script>
+</body></html>
